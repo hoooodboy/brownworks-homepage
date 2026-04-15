@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     const res = await fetch(scriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      redirect: 'manual',
       body: JSON.stringify({
         name,
         email,
@@ -31,9 +32,10 @@ export async function POST(request: Request) {
       }),
     })
 
-    if (!res.ok) {
+    // Google Apps Script returns 302 on success
+    if (res.status !== 302 && !res.ok) {
       const text = await res.text()
-      console.error('Google Script error:', text)
+      console.error('Google Script error:', res.status, text)
       return Response.json(
         { error: 'Failed to save data.' },
         { status: 502 }
