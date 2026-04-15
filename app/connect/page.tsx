@@ -374,25 +374,33 @@ export default function ConnectPage() {
   })
   const [showForm, setShowForm] = useState(true)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const { name, email, company, phone, message } = formData
-    const subject = encodeURIComponent('Inquiry from ' + name + ' via Brownworks Website')
-    const body = encodeURIComponent(
-      'Name: ' + name + '\n' +
-      'Email: ' + email + '\n' +
-      'Company: ' + (company || 'Not provided') + '\n' +
-      'Phone: ' + (phone || 'Not provided') + '\n\n' +
-      'Message:\n' + message
-    )
-    window.location.href = 'mailto:info@brownworks.co.kr?subject=' + subject + '&body=' + body
-    setShowForm(false)
-    setShowSuccess(true)
+    if (submitting) return
+    setSubmitting(true)
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (!res.ok) throw new Error('Failed')
+
+      setShowForm(false)
+      setShowSuccess(true)
+    } catch {
+      alert('Failed to send message. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -482,7 +490,9 @@ export default function ConnectPage() {
                     <FormHint>4000 max characters</FormHint>
                   </FormGroup>
                 </FormRow>
-                <FormSubmit type="submit">Submit</FormSubmit>
+                <FormSubmit type="submit" disabled={submitting}>
+                  {submitting ? 'Sending...' : 'Submit'}
+                </FormSubmit>
               </form>
             )}
 
